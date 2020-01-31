@@ -11,7 +11,7 @@
 ##### numpy.zeros(shape, dtype=float, order=‘C’)   返回一个0数组 
 
 > shape —— 整型或者整数序列，新数组的大小，比如 (2, 3) 或者 2
-> dtype —— 数据类型，可选参数，默认float 
+> dtype —— 数据类型，可选参数，默认float
 > order —— 是否在内存中以 C- 或 Fortran-contiguous（行或列）顺序存储多维数据。可选参数 
 
 ##### cv2.addWeighted(src1, alpha, src2, beta, gamma[, dst[, dtype]]) → dst.表示将两个图像进行重叠操作
