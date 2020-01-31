@@ -6,13 +6,15 @@ from PIL import ImageGrab
 
 
 class Diff():
-
+    
+    # 增加图片对比度、亮度
     def adjust(self, img, c, b):
         h, w, r = img.shape
         blank = np.zeros([h, w, r], img.dtype)
         dst = cv2.addWeighted(img, c, blank, 1 - c, b)
         return dst
-
+    
+    # 两次闭运算（kernel分别为椭圆形和矩形）
     def closing(self, frame, n):
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (n, n))
         closing = cv2.morphologyEx(frame, cv2.MORPH_CLOSE, kernel)
@@ -22,17 +24,18 @@ class Diff():
 
     def get_result(self):
         img = cv2.imread("input.png")
-        imgray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        ret, dst = cv2.threshold(imgray, 127, 255, 0)
-        contours, hierarchy = cv2.findContours(dst, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        imgray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # 转为灰度图
+        ret, dst = cv2.threshold(imgray, 127, 255, 0)  # 转为二值图
+        contours, hierarchy = cv2.findContours(dst, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)  # 寻找边缘
 
         cv2.waitKey(0)
         
+        # 找出屏幕中的两幅找茬图
         picture = []
         for cnt in contours:
             x, y, w, h = cv2.boundingRect(cnt)
-            if 90000 < w*h < 130000:
-                picture.append([x+10,y+10,w-20,h-20])
+            if 90000 < w*h < 130000:  # 根据自身屏幕显示的找茬图大小调整区间
+                picture.append([x+10,y+10,w-20,h-20])  # 去除边框
         try:
             for i in range(len(picture)):
                 for j in range(i+1, len(picture)):
@@ -40,21 +43,24 @@ class Diff():
                         pic1 = img[picture[i][1]:picture[i][1]+picture[i][3], picture[i][0]:picture[i][0]+picture[i][2]]
                         pic2 = img[picture[j][1]:picture[j][1]+picture[j][3], picture[j][0]:picture[j][0]+picture[j][2]]
             pic1 = self.adjust(pic1, 1.1, 0)
-            pic = cv2.absdiff(pic1, pic2)
+            pic = cv2.absdiff(pic1, pic2)  # 找出两图区别
         except Exception:
             print("请按要求截图")
             return
-
+        
+        # 处理区别图
         frame = self.adjust(pic, 1.3, 0)
         cls = self.closing(frame, 5)
         picgray = cv2.cvtColor(cls, cv2.COLOR_BGR2GRAY)
         ret, dst = cv2.threshold(picgray, 30, 255, 0)
         dst = self.closing(dst, 8)
-
+        
+        # 将图1和处理过的区别图叠加
         b, g, r = cv2.split(pic1)
         b, g, r = cv2.add(b, dst), cv2.add(g, dst), cv2.add(r, dst)
         res = cv2.merge([b, g, r])
-
+        
+        # 框出不同之处
         contours, hierarchy = cv2.findContours(dst, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         for cnt in contours:
             x, y, w, h = cv2.boundingRect(cnt)
@@ -62,7 +68,7 @@ class Diff():
                 cv2.rectangle(res, (x, y), (x+w, y+h), (0,255,0), 3)
         cv2.imwrite('result.png', res)
 
-
+# GUI界面
 class GUI():
     def __init__(self):
         self.root = tk.Tk()
